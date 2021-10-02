@@ -26,7 +26,7 @@ app.use(
     cookie: {
       sameSite: true, //both fe and be are running on the same hostname
       httpOnly: true, //we are not using https
-      maxAge: 60000, //session time
+      // maxAge: 60000, //session time
     },
     rolling: true,
   })
@@ -43,11 +43,14 @@ app.locals.title = `${capitalized(projectName)} created with IronLauncher`;
 const index = require("./routes/index");
 app.use("/", index);
 
-const project = require("./routes/project-routes");
+const project = require("./routes/project");
 app.use("/", project);
 
-const auth = require("./routes/auth-routes");
+const auth = require("./routes/auth");
 app.use("/", auth);
+
+const jam = require("./routes/jam");
+app.use("/", jam);
 
 // ❗ To handle errors. Routes that don't exist or errors that you handle in specific routes
 require("./error-handling")(app);
