@@ -23,6 +23,22 @@ const userSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Review",
     }],
+    userFollows: [{
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    }],
+    userJamsCreated: [{
+      type: Schema.Types.ObjectId,
+      ref: "Jam",
+    }],
+    userJamsAdmin: [{
+      type: Schema.Types.ObjectId,
+      ref: "Jam",
+    }],
+    userJams: [{
+      type: Schema.Types.ObjectId,
+      ref: "Jam",
+    }],
   },
   {timestamps: true}
 );

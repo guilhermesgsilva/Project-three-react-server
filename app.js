@@ -26,14 +26,14 @@ app.use(
     cookie: {
       sameSite: true, //both fe and be are running on the same hostname
       httpOnly: true, //we are not using https
-      // maxAge: 60000, //session time
+      maxAge: 60000, //session time
     },
     rolling: true,
   })
 );
 
 // default value for title local
-const projectName = "project-management-server";
+const projectName = "Project-three-react-server";
 const capitalized = (string) =>
   string[0].toUpperCase() + string.slice(1).toLowerCase();
 

@@ -46,7 +46,7 @@ router.post("/signup", async (req, res) => {
 });
 
 
-// LIST USERS
+// LIST USERS - Not needed
 
 router.get("/users", async (req, res) => {
   try {
@@ -62,7 +62,9 @@ router.get("/users", async (req, res) => {
 
 router.get("/users/:userId", async (req, res) => {
   try {
-    const response = await User.findById(req.params.userId);
+    const response = await User.findById(req.params.userId).populate(
+      "userFollows"
+    );
     res.status(200).json(response);
   } catch (e) {
     res.status(500).json({ message: e.message });
@@ -91,14 +93,12 @@ router.put("/users/:userId/update", async (req, res) => {
 });
 
 
-// DELETE USER
+// DELETE USER - Need review, not params, session!
 
-router.delete("/users/:userId/delete", async (req, res) => {
+router.delete("/delete", async (req, res) => {
   try {
-    await User.findByIdAndRemove(req.params.userId);
-    res
-      .status(200)
-      .json({ message: `User with id ${req.params.userId} was deleted.` });
+    await User.findByIdAndRemove(req.session.currentUser._id);
+    res.status(200).json({ message: `User deleted` });
   } catch (e) {
     res.status(500).json({ message: e.message });
   }
@@ -112,14 +112,14 @@ router.post("/login", async (req, res) => {
 
   // Check for username and password being filled out
   if (userName === "" || userPassword === "") {
-    res.status(400).json({ message: "missing fields" });
+    res.status(400).json({ message: "Missing fields" });
     return;
   }
 
   // Check if the user exists
-  const user = await User.findOne({ userName });
+  const user = await User.findOne({ userName }).populate("userFollows");
   if (user === null) {
-    res.status(401).json({ message: "invalid login" });
+    res.status(401).json({ message: "Invalid login" });
     return;
   }
 
@@ -128,7 +128,7 @@ router.post("/login", async (req, res) => {
     req.session.currentUser = user;
     res.status(200).json(user);
   } else {
-    res.status(401).json({ message: "invalid login" });
+    res.status(401).json({ message: "Invalid login" });
   }
 });
 
@@ -189,60 +189,113 @@ router.put("/users/:userId/add-review", async (req, res) => {
 
 // DELETE REVIEW
 
-// PULL FROM USER REVIEWS ARRAY - not Working!
+// PULL FROM USER REVIEWS ARRAY - Not working!
+
+// router.put("/users/:userId/delete-review/:reviewId", async (req, res) => {
+//   const userId = req.params.userId;
+//   const reviewId = req.params.reviewId;
+
+//   try {
+//     const response = await User.findByIdAndUpdate(userId, {
+//       $pull: {
+//         userReviewsReceived: {_id: reviewId}
+//       },
+//     });
+//     /*await Review.findByIdAndRemove(reviewId);*/
+//     res
+//       .status(200)
+//       .json(response);
+//   } catch (e) {
+//     res.status(500).json({ message: e.message });
+//   }
+// });
+
+// FILTER USER REVIEWS ARRAY 
 
 router.put("/users/:userId/delete-review/:reviewId", async (req, res) => {
-  const userId = req.params.userId;
-  const reviewId = req.params.reviewId;
   try {
-    /*await Review.findByIdAndRemove(reviewId);*/
-    await User.findByIdAndUpdate(userId, {
-      $pull: {
-        userReviewsReceived: {_id: reviewId} ,
-      },    
-    });
+    const user = await User.findById(req.params.userId).populate("userReviewsReceived");
+    const reviewDelete = await Review.findById(req.params.reviewId);
+
+    const newArray = user.userReviewsReceived.filter(
+      (review) =>
+        review._id.toString().indexOf(reviewDelete._id.toString()) === -1
+    );
+
+    console.log("newArray", newArray);
+
+    const userUpdate = await User.findByIdAndUpdate(
+      user._id,
+      {
+        userReviewsReceived: newArray,
+      },
+      { new: true }
+    ).populate("userReviewsReceived");
+
+    await Review.findByIdAndRemove(req.params.reviewId);
+
     res
       .status(200)
-      .json({ message: `Review with id ${req.params.id} was deleted.` });
+      /*.json({ message: `Review with id ${req.params.id} was deleted.` });*/
+      .json(userUpdate);
   } catch (e) {
     res.status(500).json({ message: e.message });
   }
 });
 
-// DELETE BY INDEX FROM USER REVIEWS ARRAY
 
-// router.put("/users/:userId/delete-review/:reviewId", async (req, res) => {
-//   const userId = req.params.userId;
-//   const reviewId = req.params.reviewId;
-//   try {
-//     const user = await User.findById(userId);
-//     const review = await Review.findById(reviewId)
-//     const index = await user.userReviewsReceived.indexOf(review);
-//     /*await Review.findByIdAndRemove(reviewId);*/
-//     await User.findByIdAndUpdate(userId, {
-//       $delete: {
-//         userReviewsReceived: [index],
-//       },    
-//     });
-//     res
-//       .status(200)
-//       .json({ message: `Review with id ${req.params.reviewId} was deleted.` });
-//   } catch (e) {
-//     res.status(500).json({ message: e.message });
-//   }
-// });
+// FOLLOW USERS
 
-// DELETE REVIEW FROM DB - doesn't delete object from array!
+router.put("/users/:userId/follow", async (req, res) => {
+  const userFollowed = await User.findById(req.params.userId);
+  const userFollowing = await User.findById(req.session.currentUser._id).populate("userFollows");
 
-// router.put("/users/:userId/delete-review/:reviewId", async (req, res) => {
-//   try {
-//     await Review.findByIdAndRemove(req.params.reviewId);
-//     res
-//       .status(200)
-//       .json({ message: `Review with id ${req.params.reviewId} was deleted.` });
-//   } catch (e) {
-//     res.status(500).json({ message: e.message });
-//   }
-// });
+  const array = userFollowing.userFollows;
+  const found = array.find(element => element.userName === userFollowed.userName);
+  if (found) {
+    res.status(400).json({ message: "Follow already exists" });
+    return;
+  }
+
+  try {
+    const response = await User.findByIdAndUpdate(userFollowing, {
+      $push: {
+        userFollows: userFollowed,
+      },
+    });
+    res.status(200).json(response);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+});
+
+
+// UNFOLLOW USERS
+
+router.put("/users/:userId/unfollow", async (req, res) => {
+  try {
+    const userUnfollowing = await User.findById(req.session.currentUser._id).populate("userFollows");
+    const userUnfollowed = await User.findById(req.params.userId);
+
+    const newArray = userUnfollowing.userFollows.filter(
+      (follow) =>
+        follow._id.toString().indexOf(userUnfollowed._id.toString()) === -1
+    );
+
+    const userUpdate = await User.findByIdAndUpdate(
+      userUnfollowing._id,
+      {
+        userFollows: newArray,
+      },
+      { new: true }
+    ).populate("userFollows");
+
+    res
+      .status(200)
+      .json(userUpdate);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+});
 
 module.exports = router;

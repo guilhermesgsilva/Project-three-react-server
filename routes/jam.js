@@ -26,6 +26,15 @@ router.post("/jams/create", async (req, res) => {
             jamAdmins: [jamCreator],
             jamUsers: [jamCreator],
         });
+
+        await User.findByIdAndUpdate(jamCreator._id, {
+          $push: {
+            userJamsCreated: response,
+            userJamsAdmin: response,
+            userJams: response,
+          },
+        });
+
         res.status(200).json(response);
     } catch (e) {
         res.status(500).json({ message: e.message });
@@ -88,31 +97,48 @@ router.put("/jams/:jamId/update-details", async (req, res) => {
 });
 
 
-// ADD JAM ADMINS 
+// ADD JAM ADMINS - Check if jamAdmin already exists doesn't work !!!
 
 router.put("/jams/:jamId/update-admins/:userId", async (req, res) => {
+  try {
     const jamId = req.params.jamId;
-    const newJamAdmin = req.params.userId;
+    const newJamAdminId = req.params.userId;
+    const jam = await Jam.findById(jamId)
+    const newJamAdmin = await User.findById(newJamAdminId).populate("userJamsAdmin");
   
-    try {
-        const response = await Jam.findByIdAndUpdate(jamId, {
-            $push: {
-                jamAdmins: newJamAdmin,
-            },
-        });
-        res.status(200).json(response);
-    } catch (e) {
-        res.status(500).json({ message: e.message });
-    }
+    // const array = newJamAdmin.userJamsAdmin;
+    // const found = array.find(element => element._id.toString() === jam._id.toString());
+    // if (found) {
+    //   res.status(400).json({ message: "User admin already exists" });
+    //   return;
+    // }
+
+    const response = await Jam.findByIdAndUpdate(jamId, {
+        $push: {
+            jamAdmins: newJamAdmin,
+        },
+    });
+
+    await User.findByIdAndUpdate(newJamAdminId, {
+      $push: {
+        userJamsAdmin: jam,
+        userJams: response,
+      },
+    });
+
+    res.status(200).json(response);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
 });
 
 
-// DELETE JAM ADMINS
+// DELETE JAM ADMINS !!!
 
 
 
 
-// UPDATE JAM USERS
+// UPDATE JAM USERS !!!
 
 router.put("/jams/:jamId/update-users", async (req, res) => {
     const jamId = req.params.jamId;
@@ -131,7 +157,7 @@ router.put("/jams/:jamId/update-users", async (req, res) => {
 });
 
 
-// DELETE JAM
+// DELETE JAM !!!
 
 router.delete("/jams/:jamId/delete", async (req, res) => {
     try {
@@ -150,13 +176,12 @@ router.delete("/jams/:jamId/delete", async (req, res) => {
 router.put("/jams/:jamId/add-post", async (req, res) => {
     const jamId = req.params.jamId;
     const postUserCreator = await User.findById(req.session.currentUser._id);
-    const { postText, postMedia } = req.body;
+    const { postText } = req.body;
   
     try {
       const response = await Post.create({
         postUserCreator,
         postText,
-        postMedia,
       });
       await Jam.findByIdAndUpdate(jamId, {
         $push: {
@@ -170,7 +195,7 @@ router.put("/jams/:jamId/add-post", async (req, res) => {
 });
 
 
-// DELETE POST
+// DELETE POST !!!
 
 
 module.exports = router;
