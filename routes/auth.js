@@ -46,7 +46,7 @@ router.post("/signup", async (req, res) => {
 });
 
 
-// LIST USERS - Not needed
+// LIST USERS
 
 router.get("/users", async (req, res) => {
   try {
@@ -62,9 +62,7 @@ router.get("/users", async (req, res) => {
 
 router.get("/users/:userId", async (req, res) => {
   try {
-    const response = await User.findById(req.params.userId).populate(
-      "userFollows"
-    );
+    const response = await User.findById(req.params.userId).populate("userFollows").populate("userJamsCreated");
     res.status(200).json(response);
   } catch (e) {
     res.status(500).json({ message: e.message });
@@ -85,7 +83,7 @@ router.put("/users/:userId/update", async (req, res) => {
         userDescription,
       },
       { new: true }
-    );
+    ).populate("userFollows").populate("userJams");
     res.status(200).json(response);
   } catch (e) {
     res.status(500).json({ message: e.message });
@@ -93,16 +91,16 @@ router.put("/users/:userId/update", async (req, res) => {
 });
 
 
-// DELETE USER - Need review, not params, session!
+// DELETE USER - Delete userReviewsReceived, userJamsCreated, reviewUserCreator(userReviewsReceived), postUserCreator(jamPosts), and Update userJamsAdmin(jamAdmins), userJams(jamUsers) !!! - Not needed
 
-router.delete("/delete", async (req, res) => {
-  try {
-    await User.findByIdAndRemove(req.session.currentUser._id);
-    res.status(200).json({ message: `User deleted` });
-  } catch (e) {
-    res.status(500).json({ message: e.message });
-  }
-});
+// router.delete("/delete", async (req, res) => {
+//   try {
+//     await User.findByIdAndRemove(req.session.currentUser._id);
+//     res.status(200).json({ message: `User deleted` });
+//   } catch (e) {
+//     res.status(500).json({ message: e.message });
+//   }
+// });
 
 
 // LOG IN
@@ -117,7 +115,7 @@ router.post("/login", async (req, res) => {
   }
 
   // Check if the user exists
-  const user = await User.findOne({ userName }).populate("userFollows");
+  const user = await User.findOne({ userName }).populate("userFollows").populate("userJams");
   if (user === null) {
     res.status(401).json({ message: "Invalid login" });
     return;
@@ -187,7 +185,7 @@ router.put("/users/:userId/add-review", async (req, res) => {
 });
 
 
-// DELETE REVIEW
+// DELETE REVIEW - Not needed
 
 // PULL FROM USER REVIEWS ARRAY - Not working!
 
@@ -212,36 +210,35 @@ router.put("/users/:userId/add-review", async (req, res) => {
 
 // FILTER USER REVIEWS ARRAY 
 
-router.put("/users/:userId/delete-review/:reviewId", async (req, res) => {
-  try {
-    const user = await User.findById(req.params.userId).populate("userReviewsReceived");
-    const reviewDelete = await Review.findById(req.params.reviewId);
+// router.put("/users/:userId/delete-review/:reviewId", async (req, res) => {
+//   try {
+//     const user = await User.findById(req.params.userId).populate("userReviewsReceived");
+//     const reviewDelete = await Review.findById(req.params.reviewId);
 
-    const newArray = user.userReviewsReceived.filter(
-      (review) =>
-        review._id.toString().indexOf(reviewDelete._id.toString()) === -1
-    );
+//     const newArray = user.userReviewsReceived.filter(
+//       (review) =>
+//         review._id.toString().indexOf(reviewDelete._id.toString()) === -1
+//     );
 
-    console.log("newArray", newArray);
+//     console.log("newArray", newArray);
 
-    const userUpdate = await User.findByIdAndUpdate(
-      user._id,
-      {
-        userReviewsReceived: newArray,
-      },
-      { new: true }
-    ).populate("userReviewsReceived");
+//     const userUpdate = await User.findByIdAndUpdate(
+//       user._id,
+//       {
+//         userReviewsReceived: newArray,
+//       },
+//       { new: true }
+//     ).populate("userReviewsReceived");
 
-    await Review.findByIdAndRemove(req.params.reviewId);
+//     await Review.findByIdAndRemove(req.params.reviewId);
 
-    res
-      .status(200)
-      /*.json({ message: `Review with id ${req.params.id} was deleted.` });*/
-      .json(userUpdate);
-  } catch (e) {
-    res.status(500).json({ message: e.message });
-  }
-});
+//     res
+//       .status(200)
+//       .json(userUpdate);
+//   } catch (e) {
+//     res.status(500).json({ message: e.message });
+//   }
+// });
 
 
 // FOLLOW USERS

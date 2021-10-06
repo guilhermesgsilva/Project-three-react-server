@@ -23,14 +23,14 @@ router.post("/jams/create", async (req, res) => {
             jamStartTime,
             jamEndTime,
             jamCreator,
-            jamAdmins: [jamCreator],
+            // jamAdmins: [jamCreator],
             jamUsers: [jamCreator],
         });
 
         await User.findByIdAndUpdate(jamCreator._id, {
           $push: {
             userJamsCreated: response,
-            userJamsAdmin: response,
+            // userJamsAdmin: response,
             userJams: response,
           },
         });
@@ -58,7 +58,7 @@ router.get("/jams", async (req, res) => {
 
 router.get("/jams/:jamId", async (req, res) => {
     try {
-      const response = await Jam.findById(req.params.jamId);
+      const response = await Jam.findById(req.params.jamId).populate("jamCreator").populate("jamUsers").populate("jamPosts");
       res.status(200).json(response);
     } catch (e) {
       res.status(500).json({ message: e.message });
@@ -97,32 +97,73 @@ router.put("/jams/:jamId/update-details", async (req, res) => {
 });
 
 
-// ADD JAM ADMINS - Check if jamAdmin already exists doesn't work !!!
+// ADD JAM ADMINS - Check if jamAdmin already exists doesn't work !!! - Not needed
 
-router.put("/jams/:jamId/update-admins/:userId", async (req, res) => {
-  try {
-    const jamId = req.params.jamId;
-    const newJamAdminId = req.params.userId;
-    const jam = await Jam.findById(jamId)
-    const newJamAdmin = await User.findById(newJamAdminId).populate("userJamsAdmin");
+// router.put("/jams/:jamId/update-admins/:userId", async (req, res) => {
+//   try {
+//     const jamId = req.params.jamId;
+//     const newJamAdminId = req.params.userId;
+//     const jam = await Jam.findById(jamId)
+//     const newJamAdmin = await User.findById(newJamAdminId).populate("userJamsAdmin");
   
-    // const array = newJamAdmin.userJamsAdmin;
-    // const found = array.find(element => element._id.toString() === jam._id.toString());
-    // if (found) {
-    //   res.status(400).json({ message: "User admin already exists" });
-    //   return;
-    // }
+//     // const array = newJamAdmin.userJamsAdmin;
+//     // const found = array.find(element => element._id.toString() === jam._id.toString());
+//     // if (found) {
+//     //   res.status(400).json({ message: "User admin already exists" });
+//     //   return;
+//     // }
 
+//     const response = await Jam.findByIdAndUpdate(jamId, {
+//         $push: {
+//             jamAdmins: newJamAdmin,
+//             jamUsers: newJamAdmin,
+//         },
+//     });
+
+//     await User.findByIdAndUpdate(newJamAdminId, {
+//       $push: {
+//         userJamsAdmin: jam,
+//         userJams: jam,
+//       },
+//     });
+
+//     res.status(200).json(response);
+//   } catch (e) {
+//     res.status(500).json({ message: e.message });
+//   }
+// });
+
+
+// DELETE JAM ADMINS - Not needed
+
+
+// UPDATE JAM USERS
+
+router.put("/jams/:jamId/update-users", async (req, res) => {
+  const jamId = req.params.jamId;
+  const newJamUserId = req.session.currentUser._id
+  const jam = await Jam.findById(jamId);
+  const newJamUser = await User.findById(newJamUserId).populate("userJams");
+
+  const array = newJamUser.userJams;
+  console.log(array);
+  const found = array.find(element => element._id.toString() === jam._id.toString());
+  console.log(found);
+  if (found) {
+    res.status(400).json({ message: "Jam User already exists" });
+    return;
+  } 
+
+  try {
     const response = await Jam.findByIdAndUpdate(jamId, {
-        $push: {
-            jamAdmins: newJamAdmin,
-        },
+      $push: {
+          jamUsers: newJamUser,
+      },
     });
 
-    await User.findByIdAndUpdate(newJamAdminId, {
+    await User.findByIdAndUpdate(newJamUser, {
       $push: {
-        userJamsAdmin: jam,
-        userJams: response,
+        userJams: jam,
       },
     });
 
@@ -133,42 +174,18 @@ router.put("/jams/:jamId/update-admins/:userId", async (req, res) => {
 });
 
 
-// DELETE JAM ADMINS !!!
+// DELETE JAM - Update jamCreator(userJamsCreated), jamAdmins(userJamsAdmin), jamUsers(userJams), and Delete jamPosts !!! - Not needed
 
-
-
-
-// UPDATE JAM USERS !!!
-
-router.put("/jams/:jamId/update-users", async (req, res) => {
-    const jamId = req.params.jamId;
-    const newJamUser = await User.findById(req.session.currentUser._id);
-  
-    try {
-        const response = await Jam.findByIdAndUpdate(jamId, {
-          $push: {
-              jamUsers: newJamUser,
-          },
-        });
-        res.status(200).json(response);
-    } catch (e) {
-        res.status(500).json({ message: e.message });
-    }
-});
-
-
-// DELETE JAM !!!
-
-router.delete("/jams/:jamId/delete", async (req, res) => {
-    try {
-      await Jam.findByIdAndRemove(req.params.jamId);
-      res
-        .status(200)
-        .json({ message: `User with id ${req.params.jamId} was deleted.` });
-    } catch (e) {
-      res.status(500).json({ message: e.message });
-    }
-});
+// router.delete("/jams/:jamId/delete", async (req, res) => {
+//   try {
+//     await Jam.findByIdAndRemove(req.params.jamId);
+//     res
+//       .status(200)
+//       .json({ message: `User with id ${req.params.jamId} was deleted.` });
+//   } catch (e) {
+//     res.status(500).json({ message: e.message });
+//   }
+// });
 
 
 // CREATE POST
@@ -195,7 +212,7 @@ router.put("/jams/:jamId/add-post", async (req, res) => {
 });
 
 
-// DELETE POST !!!
+// DELETE POST - Not needed
 
 
 module.exports = router;

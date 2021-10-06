@@ -28,10 +28,10 @@ const jamSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
-    jamAdmins: [{
-      type: Schema.Types.ObjectId,
-      ref: "User",
-    }],
+    // jamAdmins: [{
+    //   type: Schema.Types.ObjectId,
+    //   ref: "User",
+    // }],
     jamUsers:  [{
       type: Schema.Types.ObjectId,
       ref: "User",
