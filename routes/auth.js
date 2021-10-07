@@ -4,7 +4,6 @@ const Review = require("../models/Review.model");
 const bcrypt = require("bcryptjs");
 const fileUpload = require("../config/cloudinary");
 
-
 // SIGN UP
 
 router.post("/signup", async (req, res) => {
@@ -45,7 +44,6 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-
 // LIST USERS
 
 router.get("/users", async (req, res) => {
@@ -57,41 +55,62 @@ router.get("/users", async (req, res) => {
   }
 });
 
-
 // USER DETAILS
 
 router.get("/users/:userId", async (req, res) => {
   try {
-    const response = await User.findById(req.params.userId).populate("userFollows").populate("userJamsCreated");
+    const response = await User.findById(req.params.userId)
+      .populate("userFollows")
+      .populate("userJamsCreated")
+      .populate("userJams");
     res.status(200).json(response);
   } catch (e) {
     res.status(500).json({ message: e.message });
   }
 });
-
 
 // UPDATE USER
 
 router.put("/users/:userId/update", async (req, res) => {
   const { userTitle, userPicture, userDescription } = req.body;
-  try {
-    const response = await User.findByIdAndUpdate(
-      req.params.userId,
-      {
-        userTitle,
-        userPicture,
-        userDescription,
-      },
-      { new: true }
-    ).populate("userFollows").populate("userJams");
-    res.status(200).json(response);
-  } catch (e) {
-    res.status(500).json({ message: e.message });
+
+  if (userPicture) {
+    try {
+      const response = await User.findByIdAndUpdate(
+        req.params.userId,
+        {
+          userTitle,
+          userPicture,
+          userDescription,
+        },
+        { new: true }
+      )
+        .populate("userFollows")
+        .populate("userJams");
+      res.status(200).json(response);
+    } catch (e) {
+      res.status(500).json({ message: e.message });
+    }
+  } else {
+    try {
+      const response = await User.findByIdAndUpdate(
+        req.params.userId,
+        {
+          userTitle,
+          userDescription,
+        },
+        { new: true }
+      )
+        .populate("userFollows")
+        .populate("userJams");
+      res.status(200).json(response);
+    } catch (e) {
+      res.status(500).json({ message: e.message });
+    }
   }
 });
 
-
-// DELETE USER - Delete userReviewsReceived, userJamsCreated, reviewUserCreator(userReviewsReceived), postUserCreator(jamPosts), and Update userJamsAdmin(jamAdmins), userJams(jamUsers) !!! - Not needed
+// DELETE USER - Delete userReviewsReceived, userJamsCreated, reviewUserCreator(userReviewsReceived), postUserCreator(jamPosts), and Update userJamsAdmin(jamAdmins), userJams(jamUsers) !!!
 
 // router.delete("/delete", async (req, res) => {
 //   try {
@@ -101,7 +120,6 @@ router.put("/users/:userId/update", async (req, res) => {
 //     res.status(500).json({ message: e.message });
 //   }
 // });
-
 
 // LOG IN
 
@@ -115,7 +133,9 @@ router.post("/login", async (req, res) => {
   }
 
   // Check if the user exists
-  const user = await User.findOne({ userName }).populate("userFollows").populate("userJams");
+  const user = await User.findOne({ userName })
+    .populate("userFollows")
+    .populate("userJams");
   if (user === null) {
     res.status(401).json({ message: "Invalid login" });
     return;
@@ -130,14 +150,12 @@ router.post("/login", async (req, res) => {
   }
 });
 
-
 // LOG OUT
 
 router.post("/logout", (req, res) => {
   req.session.destroy();
   res.status(200).json({ message: "User logged out" });
 });
-
 
 // IS LOGGED IN ?
 
@@ -149,43 +167,41 @@ router.get("/isloggedin", (req, res) => {
   }
 });
 
-
 // CLOUDINARY
 
 router.post("/upload", fileUpload.single("file"), (req, res) => {
   try {
+    console.log(req.file)
     res.status(200).json({ fileUrl: req.file.path });
   } catch (e) {
     res.status(500).json({ message: e.message });
   }
 });
 
-
 // CREATE REVIEW
 
-router.put("/users/:userId/add-review", async (req, res) => {
-  const userId = req.params.userId;
-  const reviewUserCreator = await User.findById(req.session.currentUser._id);
-  const { reviewText } = req.body;
+// router.put("/users/:userId/add-review", async (req, res) => {
+//   const userId = req.params.userId;
+//   const reviewUserCreator = await User.findById(req.session.currentUser._id);
+//   const { reviewText } = req.body;
 
-  try {
-    const response = await Review.create({
-      reviewUserCreator,
-      reviewText,
-    });
-    await User.findByIdAndUpdate(userId, {
-      $push: {
-        userReviewsReceived: response,
-      },
-    });
-    res.status(200).json(response);
-  } catch (e) {
-    res.status(500).json({ message: e.message });
-  }
-});
+//   try {
+//     const response = await Review.create({
+//       reviewUserCreator,
+//       reviewText,
+//     });
+//     await User.findByIdAndUpdate(userId, {
+//       $push: {
+//         userReviewsReceived: response,
+//       },
+//     });
+//     res.status(200).json(response);
+//   } catch (e) {
+//     res.status(500).json({ message: e.message });
+//   }
+// });
 
-
-// DELETE REVIEW - Not needed
+// DELETE REVIEW
 
 // PULL FROM USER REVIEWS ARRAY - Not working!
 
@@ -208,7 +224,7 @@ router.put("/users/:userId/add-review", async (req, res) => {
 //   }
 // });
 
-// FILTER USER REVIEWS ARRAY 
+// FILTER USER REVIEWS ARRAY
 
 // router.put("/users/:userId/delete-review/:reviewId", async (req, res) => {
 //   try {
@@ -240,15 +256,18 @@ router.put("/users/:userId/add-review", async (req, res) => {
 //   }
 // });
 
-
 // FOLLOW USERS
 
 router.put("/users/:userId/follow", async (req, res) => {
   const userFollowed = await User.findById(req.params.userId);
-  const userFollowing = await User.findById(req.session.currentUser._id).populate("userFollows");
+  const userFollowing = await User.findById(
+    req.session.currentUser._id
+  ).populate("userFollows");
 
   const array = userFollowing.userFollows;
-  const found = array.find(element => element.userName === userFollowed.userName);
+  const found = array.find(
+    (element) => element.userName === userFollowed.userName
+  );
   if (found) {
     res.status(400).json({ message: "Follow already exists" });
     return;
@@ -266,12 +285,13 @@ router.put("/users/:userId/follow", async (req, res) => {
   }
 });
 
-
 // UNFOLLOW USERS
 
 router.put("/users/:userId/unfollow", async (req, res) => {
   try {
-    const userUnfollowing = await User.findById(req.session.currentUser._id).populate("userFollows");
+    const userUnfollowing = await User.findById(
+      req.session.currentUser._id
+    ).populate("userFollows");
     const userUnfollowed = await User.findById(req.params.userId);
 
     const newArray = userUnfollowing.userFollows.filter(
@@ -287,9 +307,7 @@ router.put("/users/:userId/unfollow", async (req, res) => {
       { new: true }
     ).populate("userFollows");
 
-    res
-      .status(200)
-      .json(userUpdate);
+    res.status(200).json(userUpdate);
   } catch (e) {
     res.status(500).json({ message: e.message });
   }

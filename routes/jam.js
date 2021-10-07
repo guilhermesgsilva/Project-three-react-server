@@ -69,24 +69,25 @@ router.get("/jams/:jamId", async (req, res) => {
 // UPDATE JAM DETAILS
 
 router.put("/jams/:jamId/update-details", async (req, res) => {
-    const { jamCity, jamAddress, jamDate, jamStartTime, jamEndTime, jamPicture, jamDescription} = req.body;
+  const { jamCity, jamAddress, jamDate, jamStartTime, jamEndTime, jamPicture, jamDescription} = req.body;
   
+  if (jamPicture) {
     if (!jamCity || !jamAddress || !jamDate || !jamStartTime) {
         res.status(400).json({ message: "missing fields" });
         return;
     }
-  
+
     try {
       const response = await Jam.findByIdAndUpdate(
         req.params.jamId,
         {
-            jamCity,
-            jamAddress,
-            jamDate,
-            jamStartTime,
-            jamEndTime,
-            jamPicture,
-            jamDescription,
+          jamCity,
+          jamAddress,
+          jamDate,
+          jamStartTime,
+          jamEndTime,
+          jamPicture,
+          jamDescription,
         },
         { new: true }
       );
@@ -94,10 +95,29 @@ router.put("/jams/:jamId/update-details", async (req, res) => {
     } catch (e) {
       res.status(500).json({ message: e.message });
     }
+  } else {
+    try {
+      const response = await Jam.findByIdAndUpdate(
+        req.params.jamId,
+        {
+          jamCity,
+          jamAddress,
+          jamDate,
+          jamStartTime,
+          jamEndTime,
+          jamDescription,
+        },
+        { new: true }
+      );
+      res.status(200).json(response);
+    } catch (e) {
+      res.status(500).json({ message: e.message });
+    }
+  }
 });
 
 
-// ADD JAM ADMINS - Check if jamAdmin already exists doesn't work !!! - Not needed
+// ADD JAM ADMINS - Check if jamAdmin already exists doesn't work !!!
 
 // router.put("/jams/:jamId/update-admins/:userId", async (req, res) => {
 //   try {
@@ -134,13 +154,14 @@ router.put("/jams/:jamId/update-details", async (req, res) => {
 // });
 
 
-// DELETE JAM ADMINS - Not needed
+// DELETE JAM ADMINS
 
 
 // UPDATE JAM USERS
 
 router.put("/jams/:jamId/update-users", async (req, res) => {
   const jamId = req.params.jamId;
+  console.log(req.session);
   const newJamUserId = req.session.currentUser._id
   const jam = await Jam.findById(jamId);
   const newJamUser = await User.findById(newJamUserId).populate("userJams");
@@ -174,7 +195,7 @@ router.put("/jams/:jamId/update-users", async (req, res) => {
 });
 
 
-// DELETE JAM - Update jamCreator(userJamsCreated), jamAdmins(userJamsAdmin), jamUsers(userJams), and Delete jamPosts !!! - Not needed
+// DELETE JAM - Update jamCreator(userJamsCreated), jamAdmins(userJamsAdmin), jamUsers(userJams), and Delete jamPosts !!!
 
 // router.delete("/jams/:jamId/delete", async (req, res) => {
 //   try {
@@ -190,29 +211,29 @@ router.put("/jams/:jamId/update-users", async (req, res) => {
 
 // CREATE POST
 
-router.put("/jams/:jamId/add-post", async (req, res) => {
-    const jamId = req.params.jamId;
-    const postUserCreator = await User.findById(req.session.currentUser._id);
-    const { postText } = req.body;
+// router.put("/jams/:jamId/add-post", async (req, res) => {
+//     const jamId = req.params.jamId;
+//     const postUserCreator = await User.findById(req.session.currentUser._id);
+//     const { postText } = req.body;
   
-    try {
-      const response = await Post.create({
-        postUserCreator,
-        postText,
-      });
-      await Jam.findByIdAndUpdate(jamId, {
-        $push: {
-            jamPosts: response,
-        },
-      });
-      res.status(200).json(response);
-    } catch (e) {
-      res.status(500).json({ message: e.message });
-    }
-});
+//     try {
+//       const response = await Post.create({
+//         postUserCreator,
+//         postText,
+//       });
+//       await Jam.findByIdAndUpdate(jamId, {
+//         $push: {
+//             jamPosts: response,
+//         },
+//       });
+//       res.status(200).json(response);
+//     } catch (e) {
+//       res.status(500).json({ message: e.message });
+//     }
+// });
 
 
-// DELETE POST - Not needed
+// DELETE POST
 
 
 module.exports = router;
