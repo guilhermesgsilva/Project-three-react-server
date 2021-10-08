@@ -21,7 +21,7 @@ const jamSchema = new Schema(
     jamEndTime: String,
     jamPicture: {
       type: String,
-      default: "../public/images/Jam.jpg",
+      default: "https://res.cloudinary.com/dugsgijal/image/upload/v1633684922/projects/bii9lxw44rmnyttoqska.jpg",
     },
     jamDescription: String,
     jamCreator: {

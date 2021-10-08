@@ -16,7 +16,7 @@ const userSchema = new Schema(
     },
     userPicture: {
       type: String,
-      default: "../public/images/Profile.jpg",
+      default: "https://res.cloudinary.com/dugsgijal/image/upload/v1633684872/projects/m07abvhnvnzn9q4yrhxs.jpg",
     },
     userDescription: String,
     userReviewsReceived: [{
