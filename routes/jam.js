@@ -180,7 +180,7 @@ router.put("/jams/:jamId/update-users", async (req, res) => {
       $push: {
           jamUsers: newJamUser,
       },
-    });
+    }, { new: true}).populate("jamUsers");
 
     await User.findByIdAndUpdate(newJamUser, {
       $push: {

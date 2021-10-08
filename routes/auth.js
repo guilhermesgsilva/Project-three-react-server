@@ -278,7 +278,7 @@ router.put("/users/:userId/follow", async (req, res) => {
       $push: {
         userFollows: userFollowed,
       },
-    });
+    }, { new: true}).populate("userFollows");
     res.status(200).json(response);
   } catch (e) {
     res.status(500).json({ message: e.message });

@@ -16,7 +16,7 @@ const userSchema = new Schema(
     },
     userPicture: {
       type: String,
-      default: "http://placekitten.com/200/200",
+      default: "../public/images/Profile.jpg",
     },
     userDescription: String,
     userReviewsReceived: [{

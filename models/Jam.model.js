@@ -21,7 +21,7 @@ const jamSchema = new Schema(
     jamEndTime: String,
     jamPicture: {
       type: String,
-      default: "http://placekitten.com/150/150",
+      default: "../public/images/Jam.jpg",
     },
     jamDescription: String,
     jamCreator: {
